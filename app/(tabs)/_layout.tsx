@@ -1,6 +1,7 @@
 // app/(tabs)/_layout.tsx
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+//import FontAwesome from '@expo/vector-icons/FontAwesome';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Tabs } from 'expo-router';
 // import Colors from '@/constants/Colors'; // If you have a Colors constant file
 
@@ -29,15 +30,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="sources" // Corresponds to app/(tabs)/sources.tsx
         options={{
-          title: 'Audio Sources',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="sliders" color={color} />,
+          title: 'Sources',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons size={28} name="microphone" color={color} />,
         }}
       />
       <Tabs.Screen
         name="destinations" // Corresponds to app/(tabs)/destinations.tsx
         options={{
-          title: 'Audio Destinations',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="plug" color={color} />,
+          title: 'Destinations',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons size={28} name="speaker" color={color} />,
         }}
       />
     </Tabs>

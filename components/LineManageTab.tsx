@@ -1,4 +1,3 @@
-// app/(tabs)/sources.tsx (Conceptual Usage)
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { FlatList, Button, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, RefreshControl } from 'react-native';
@@ -6,26 +5,26 @@ import { Stack } from 'expo-router';
 // Import the themed components from your project structure
 import { ThemedView } from '@/components/ThemedView'; // Adjust path as needed
 import { ThemedText } from '@/components/ThemedText';
-// ... other imports (Api, EditSourceModal, FontAwesome)
-import Api, { LineItem, CreateLinePayload, UpdateLinePayload } from '../../services/Api';
-import EditSourceModal from '../../components/EditSourceModal';
+// ... other imports (Api, EditLineModal, FontAwesome)
+import Api, { LineType, LineItem, CreateLinePayload, UpdateLinePayload } from '@/services/Api';
+import EditLineModal from '@/components/EditLineModal';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 // Your Colors.ts might still be useful for non-View/Text elements or for passing to custom props
 import { useColorScheme } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { Colors } from '@/constants/Colors';
 
-import Alerty from '../../components/Alerty';
+import Alerty from '@/components/Alerty';
 
-// List Item Component (can be moved to components/SourceListItem.tsx)
-interface SourceItemProps {
+// List Item Component (can be moved to components/LineListItem.tsx)
+interface LineItemProps {
     item: LineItem;
     onEdit: (item: LineItem) => void;
     onDelete: (id: number) => void;
 }
-    
-// ... (SourceListItem could also use ThemedText/ThemedView)
-const SourceListItem: React.FC<SourceItemProps> = ({ item, onEdit, onDelete }) => {
+
+// ... (LineListItem could also use ThemedText/ThemedView)
+const LineListItem: React.FC<LineItemProps> = ({ item, onEdit, onDelete }) => {
   const colorScheme = useColorScheme() ?? 'light';
   const themeColors = Colors[colorScheme]; // For colors not directly handled by ThemedText/View props
 
@@ -56,27 +55,28 @@ const SourceListItem: React.FC<SourceItemProps> = ({ item, onEdit, onDelete }) =
   );
 };
 
-
-export default function ManageSourcesScreen() {
+export default function ManageLinesScreen(lineType: LineType) {
   const colorScheme = useColorScheme() ?? 'light';
   const themeColors = Colors[colorScheme]; // Still useful for things like Button colors, icons, RefreshControl
-  const [sources, setSources] = useState<LineItem[]>([]);
+  const [lines, setLines] = useState<LineItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingSource, setEditingSource] = useState<LineItem | null>(null);
+  const [editingLine, setEditingLine] = useState<LineItem | null>(null);
 
-  const fetchSources = useCallback(async () => {
+  const lineTypeName = lineType == 'src' ? 'Source' : 'Destination';
+
+  const fetchLines = useCallback(async () => {
     if (!refreshing) setIsLoading(true);
     setError(null);
     try {
-      const response = await Api.getSources();
-      setSources(response.data || []);
+      const response = await Api.getLines(lineType);
+      setLines(response.data || []);
     } catch (err: any) {
-      console.error("Failed to fetch sources:", err.response?.data || err.message);
-      setError(err.response?.data?.error || err.message || 'Failed to fetch sources.');
-      setSources([]);
+      console.error("Failed to fetch lines:", err.response?.data || err.message);
+      setError(err.response?.data?.error || err.message || `Failed to fetch ${lineTypeName.toLowerCase()}s.`);
+      setLines([]);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -84,46 +84,45 @@ export default function ManageSourcesScreen() {
   }, [refreshing]);
 
   useEffect(() => {
-    fetchSources();
-  }, [fetchSources]); // Initial fetch
+    fetchLines();
+  }, [fetchLines]); // Initial fetch
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchSources();
-  }, [fetchSources]);
+    fetchLines();
+  }, [fetchLines]);
 
-  const handleOpenModal = (source: LineItem | null = null) => {
-    setEditingSource(source);
+  const handleOpenModal = (line: LineItem | null = null) => {
+    setEditingLine(line);
     setIsModalVisible(true);
   };
 
   const handleCloseModal = () => {
     setIsModalVisible(false);
-    setEditingSource(null);
+    setEditingLine(null);
   };
 
-  const handleSaveSource = async (sourceData: CreateLinePayload | UpdateLinePayload) => {
-    const isCreating = !editingSource;
+  const handleSaveLine = async (lineData: CreateLinePayload | UpdateLinePayload) => {
+    const isCreating = !editingLine;
     try {
       if (isCreating) {
-        await Api.createSource(sourceData as CreateLinePayload);
-      } else if (editingSource?.id) {
-        await Api.updateSource(editingSource.id, sourceData as UpdateLinePayload);
+        await Api.createLine(lineType, lineData as CreateLinePayload);
+      } else if (editingLine?.id) {
+        await Api.updateLine(lineType, editingLine.id, lineData as UpdateLinePayload);
       }
-      fetchSources(); // Refresh list
+      fetchLines(); // Refresh list
       handleCloseModal();
-      Alert.alert("Success", `Source ${isCreating ? 'created' : 'updated'} successfully.`);
+      Alert.alert("Success", `${lineTypeName} ${isCreating ? 'created' : 'updated'} successfully.`);
     } catch (err: any) {
-      console.error("Failed to save source:", err.response?.data || err.message);
-      Alert.alert("Error", `Failed to save source: ${err.response?.data?.error || err.message}`);
+      console.error("Failed to save line:", err.response?.data || err.message);
+      Alert.alert("Error", `Failed to save ${lineTypeName.toLowerCase()}: ${err.response?.data?.error || err.message}`);
     }
   };
 
-  const handleDeleteSource = (id: number) => {
-    console.log('handleDeleteSource enter', id);
+  const handleDeleteLine = (id: number) => {
     Alerty(
       "Confirm Delete",
-      "Are you sure you want to delete this source?",
+      `Are you sure you want to delete this ${lineTypeName.toLowerCase()}?`,
       [
         { text: "Cancel", style: "cancel", onPress:()=>{} },
         {
@@ -131,30 +130,21 @@ export default function ManageSourcesScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-                console.log('handleDeleteSource yes', id);
-                await Api.deleteSource(id);
-              fetchSources(); // Refresh list
-              // Alerty("Success", "Source deleted successfully.");
+                console.log('handleDeleteLine yes', id);
+                await Api.deleteLine(lineType, id);
+              fetchLines(); // Refresh list
+              // Alerty("Success", "Line deleted successfully.");
             } catch (err: any) {
-              console.error("Failed to delete source:", err);
-              Alerty("Error", "Failed to delete source.");
+              console.error("Failed to delete line:", err);
+              Alerty("Error", `Failed to delete ${lineTypeName.toLowerCase}.`);
             }
           },
         },
-      ],
-      {
-        cancelable: true,
-        onDismiss: () => {
-            console.log('handleDeleteSource dismiss', id);
-        Alert.alert(
-            'This alert was dismissed by tapping outside of the alert dialog.',
-        )},
-      }
+      ]
     );
-    console.log('handleDeleteSource exit', id);
   };
 
-  if (isLoading && sources.length === 0 && !refreshing) {
+  if (isLoading && lines.length === 0 && !refreshing) {
     return <ActivityIndicator size="large" style={styles.centeredLoader} />;
   }
 
@@ -162,16 +152,15 @@ export default function ManageSourcesScreen() {
     return (
       <ThemedView style={styles.centeredMessage}>
         <ThemedText /* style={styles.errorText} */>{error}</ThemedText>
-        <Button title="Retry" onPress={fetchSources} />
+        <Button title="Retry" onPress={fetchLines} />
       </ThemedView>
     );
   }
-console.log('ManageSourcesScreen pre return', isModalVisible)
   return (
     // ThemedView for the main screen background
     <ThemedView style={styles.container}>
       <Stack.Screen options={{
-        title: 'Manage Audio Sources',
+        title: `${lineTypeName}s`,
         // ThemedView/Text components usually don't control header styles directly.
         // Header styling is typically done via navigation options,
         // which can also use your themeColors.
@@ -180,28 +169,28 @@ console.log('ManageSourcesScreen pre return', isModalVisible)
       }} />
 
       <ThemedView style={styles.addButtonContainer}>
-        <Button title="Add New Source" onPress={() => handleOpenModal(null)} color={themeColors.createButton} />
+        <Button title={`Add New ${lineTypeName}`} onPress={() => handleOpenModal(null)} color={themeColors.createButton} />
       </ThemedView>
 
       {/* ... loading/error states using ThemedText ... */}
-      {isLoading && sources.length === 0 && !refreshing && (
+      {isLoading && lines.length === 0 && !refreshing && (
         <ActivityIndicator size="large" color={themeColors.text} />
       )}
       {error && !isLoading && (
         <ThemedView style={styles.centeredMessage}>
           <ThemedText style={{ color: themeColors.text }}>{error}</ThemedText>
-          <Button title="Retry" onPress={fetchSources} color={themeColors.text} />
+          <Button title="Retry" onPress={fetchLines} color={themeColors.text} />
         </ThemedView>
       )}
 
       <FlatList
-        data={sources}
+        data={lines}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <SourceListItem
+          <LineListItem
             item={item}
             onEdit={handleOpenModal}
-            onDelete={handleDeleteSource}
+            onDelete={handleDeleteLine}
           />
         )}
         refreshControl={
@@ -213,22 +202,23 @@ console.log('ManageSourcesScreen pre return', isModalVisible)
           />
         }
         ListHeaderComponent={isLoading && refreshing ? <ActivityIndicator style={{ marginVertical: 10 }} /> : null}
-        contentContainerStyle={sources.length === 0 ? styles.listEmptyContainer : styles.listContainer}
+        contentContainerStyle={lines.length === 0 ? styles.listEmptyContainer : styles.listContainer}
         style={styles.list}
       />
       { isModalVisible && (
-        <EditSourceModal
+        <EditLineModal
+            lineType={lineType}
             visible={isModalVisible}
             onClose={handleCloseModal}
-            onSave={handleSaveSource}
-            source={editingSource}
+            onSave={handleSaveLine}
+            line={editingLine}
         />
       ) }
     </ThemedView>
   );
 }
 
-// Styles for ManageSourcesScreen (can be simplified as ThemedView/Text handle some defaults)
+// Styles for ManageLinesScreen (can be simplified as ThemedView/Text handle some defaults)
 const styles = StyleSheet.create({
   container: { // ThemedView will apply its own background based on the theme
     flex: 1,
@@ -258,7 +248,7 @@ const styles = StyleSheet.create({
     // alignItems: 'center',
   },
 
-  // Styles for SourceListItem
+  // Styles for LineListItem
   itemContainer: { // ThemedView will apply its card-like background
     flexDirection: 'row',
     justifyContent: 'space-between',

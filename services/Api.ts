@@ -40,6 +40,8 @@ const apiClient = axios.create({
   },
 });
 
+export type LineType = "src" | "dst";
+
 // --- Source Endpoints ---
 export const getSources = (): Promise<AxiosResponse<LineItem[]>> => apiClient.get('/src');
 export const getSourceById = (id: number): Promise<AxiosResponse<LineItem>> => apiClient.get(`/src/${id}`);
@@ -55,9 +57,18 @@ export const createDestination = (data: CreateLinePayload): Promise<AxiosRespons
 export const updateDestination = (id: number, data: UpdateLinePayload): Promise<AxiosResponse<string>> => apiClient.put(`/dst/${id}`, data);
 export const deleteDestination = (id: number): Promise<AxiosResponse<string>> => apiClient.delete(`/dst/${id}`);
 
+// --- Generic Line Endpoints ---
+export const getLines = (lineType: LineType): Promise<AxiosResponse<LineItem[]>> => apiClient.get(`/${lineType}`);
+export const getLineById = (lineType: LineType, id: number): Promise<AxiosResponse<LineItem>> => apiClient.get(`/${lineType}/${id}`);
+export const createLine = (lineType: LineType, data: CreateLinePayload): Promise<AxiosResponse<{ id: number }>> => apiClient.put(`/${lineType}`, data);
+export const updateLine = (lineType: LineType, id: number, data: UpdateLinePayload): Promise<AxiosResponse<string>> => apiClient.put(`/${lineType}/${id}`, data);
+export const deleteLine = (lineType: LineType, id: number): Promise<AxiosResponse<string>> => apiClient.delete(`/${lineType}/${id}`);
+
 // --- Port Endpoints ---
 export const getUnassignedSrcPorts = (): Promise<AxiosResponse<Port[]>> => apiClient.get('/port/src/unassigned');
 export const getUnassignedDstPorts = (): Promise<AxiosResponse<Port[]>> => apiClient.get('/port/dst/unassigned');
+
+export const getUnassignedLinePorts = (lineType: LineType): Promise<AxiosResponse<Port[]>> => apiClient.get(`/port/${lineType}/unassigned`);
 
 export default {
   getSources,
@@ -72,4 +83,11 @@ export default {
   deleteDestination,
   getUnassignedSrcPorts,
   getUnassignedDstPorts,
+
+  getLines,
+  getLineById,
+  createLine,
+  updateLine,
+  deleteLine,
+  getUnassignedLinePorts,
 };

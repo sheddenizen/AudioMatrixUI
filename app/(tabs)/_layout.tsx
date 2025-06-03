@@ -23,8 +23,15 @@ export default function TabLayout() {
         name="index" // Optional: could be a dashboard or redirect
         options={{
           title: 'Dashboard', // Or redirect: href: '/(tabs)/sources'
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />,
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons size={28} name="home" color={color} />,
           href: null, // Hide from tab bar if it's just a redirect target or not a primary tab
+        }}
+      />
+      <Tabs.Screen
+        name="explore" // Sample stuff
+        options={{
+          title: 'Explore', // Or redirect: href: '/(tabs)/sources'
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons size={28} name="compass" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -39,6 +46,13 @@ export default function TabLayout() {
         options={{
           title: 'Destinations',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons size={28} name="speaker" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="matrices" // Corresponds to app/(tabs)/matrices.tsx
+        options={{
+          title: 'Matrices',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons size={28} name="view-grid-plus-outline" color={color} />,
         }}
       />
     </Tabs>

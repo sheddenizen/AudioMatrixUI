@@ -39,7 +39,7 @@ const LineListItem: React.FC<LineItemProps> = ({ item, onEdit, onDelete }) => {
         <ThemedText style={styles.itemDescription}>{item.description || 'No description'}</ThemedText>
         {item.ports && Object.keys(item.ports).length > 0 && (
         <ThemedText style={styles.itemPorts}>
-          Ports: {Object.entries(item.ports).map(([role, portId]) => `${role}: ID ${portId}`).join(', ')}
+          {Object.entries(item.ports).map(([role, portId]) => `${role}: ID ${portId}`).join(', ')}
         </ThemedText>
       )}
       </ThemedView>

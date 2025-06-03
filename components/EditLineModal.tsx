@@ -95,7 +95,7 @@ const EditLineModal: React.FC<EditLineModalProps> = ({ visible, onClose, onSave,
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
-            <Text style={styles.modalTitle}>{line ? 'Edit Line' : 'Add New Line'}</Text>
+            <Text style={styles.modalTitle}>{(line ? 'Edit ' : 'Add New ') + (lineType == 'src' ? 'Source' : 'Destination')}</Text>
 
             <Text style={styles.label}>Name <Text style={styles.required}>*</Text></Text>
             <TextInput

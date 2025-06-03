@@ -5,9 +5,12 @@
 
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
-const createButton = '#02f';
+const action = '#02f';
 const danger = '#f20';
 const change = '#af4';
+const donothing = '#333'
+
+export type ThemeColors = Object;
 
 export const Colors = {
   light: {
@@ -17,9 +20,14 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
-    createButton: createButton,
+    createButton: action,
+    cancelButton: donothing,
     danger: danger,
-    change: change
+    change: change,
+    primary: '#f0f', // Slop alert
+    destructive: danger,
+    border: '#888',
+    inputBackground: '#ccc'
   },
   dark: {
     text: '#ECEDEE',
@@ -28,8 +36,13 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
-    createButton: createButton,
+    createButton: action,
+    cancelButton: donothing,
     danger: danger,
-    change: change
+    change: change,
+    primary: '#f0f', // Slop alert
+    destructive: '#990',
+    border: '#888',
+    inputBackground: '#222'
   },
 };

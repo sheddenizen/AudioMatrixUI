@@ -5,7 +5,7 @@ const alertPolyfill = (
     description: string,
     options?: Array<{
         text: string,
-        onPress: () => void,
+        onPress?: () => void,
         style?: string
     }>) => {
     if (!options) {
@@ -19,7 +19,7 @@ const alertPolyfill = (
         confirmOption && confirmOption.onPress()
     } else {
         const cancelOption = options.find(({ style }) => style === 'cancel')
-        cancelOption && cancelOption.onPress()
+        cancelOption && cancelOption.onPress && cancelOption.onPress()
     }
 }
 

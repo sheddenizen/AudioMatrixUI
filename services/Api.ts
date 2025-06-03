@@ -11,7 +11,7 @@ export interface Port {
 }
 
 export interface LinePortConfiguration {
-  [role: string]: number; // e.g., { left: 123, right: 456 } where numbers are port IDs
+  [role: string]:  number; // e.g., { left: 123, right: 456 } where numbers are port IDs
 }
 
 export interface LineItem {
@@ -42,20 +42,39 @@ const apiClient = axios.create({
 
 export type LineType = "src" | "dst";
 
-// --- Source Endpoints ---
-export const getSources = (): Promise<AxiosResponse<LineItem[]>> => apiClient.get('/src');
-export const getSourceById = (id: number): Promise<AxiosResponse<LineItem>> => apiClient.get(`/src/${id}`);
-// Backend uses PUT for create. The payload matches CreateLinePayload.
-export const createSource = (data: CreateLinePayload): Promise<AxiosResponse<{ id: number }>> => apiClient.put('/src', data);
-export const updateSource = (id: number, data: UpdateLinePayload): Promise<AxiosResponse<string>> => apiClient.put(`/src/${id}`, data);
-export const deleteSource = (id: number): Promise<AxiosResponse<string>> => apiClient.delete(`/src/${id}`);
+// --- Add Matrix-specific interfaces ---
+export interface MatrixItem {
+  id: number;
+  name: string;
+  description: string;
+  mode: number;
+}
 
-// --- Destination Endpoints ---
-export const getDestinations = (): Promise<AxiosResponse<LineItem[]>> => apiClient.get('/dst');
-export const getDestinationById = (id: number): Promise<AxiosResponse<LineItem>> => apiClient.get(`/dst/${id}`);
-export const createDestination = (data: CreateLinePayload): Promise<AxiosResponse<{ id: number }>> => apiClient.put('/dst', data);
-export const updateDestination = (id: number, data: UpdateLinePayload): Promise<AxiosResponse<string>> => apiClient.put(`/dst/${id}`, data);
-export const deleteDestination = (id: number): Promise<AxiosResponse<string>> => apiClient.delete(`/dst/${id}`);
+// For the GET /matrix/:id response
+export interface MatrixDetails extends Omit<MatrixItem, 'description'> { // Omit desc as it's not in the base GET /matrix/:id response
+  srcs: { id: number; name: string }[]; // Ordered list of sources in the matrix
+  dsts: { id: number; name: string }[]; // Ordered list of destinations in the matrix
+  // The active/desired fields are also there, but not needed for the edit modal
+}
+
+// For the POST /matrix payload
+export interface CreateMatrixPayload {
+  name: string;
+  description?: string;
+  mode?: number;
+  srcs: number[]; // Ordered list of source IDs
+  dsts: number[]; // Ordered list of destination IDs
+}
+
+// For the PUT /matrix/:id payload
+export interface UpdateMatrixPayload {
+  name?: string;
+  description?: string;
+  mode?: number;
+  srcs?: number[]; // Ordered list of source IDs
+  dsts?: number[]; // Ordered list of destination IDs
+}
+
 
 // --- Generic Line Endpoints ---
 export const getLines = (lineType: LineType): Promise<AxiosResponse<LineItem[]>> => apiClient.get(`/${lineType}`);
@@ -70,24 +89,24 @@ export const getUnassignedDstPorts = (): Promise<AxiosResponse<Port[]>> => apiCl
 
 export const getUnassignedLinePorts = (lineType: LineType): Promise<AxiosResponse<Port[]>> => apiClient.get(`/port/${lineType}/unassigned`);
 
-export default {
-  getSources,
-  getSourceById,
-  createSource,
-  updateSource,
-  deleteSource,
-  getDestinations,
-  getDestinationById,
-  createDestination,
-  updateDestination,
-  deleteDestination,
-  getUnassignedSrcPorts,
-  getUnassignedDstPorts,
+// --- Matrix Endpoints ---
+export const getMatrices = (): Promise<AxiosResponse<MatrixItem[]>> => apiClient.get('/matrix');
+export const getMatrixDetails = (id: number): Promise<AxiosResponse<MatrixDetails>> => apiClient.get(`/matrix/${id}`);
+export const createMatrix = (data: CreateMatrixPayload): Promise<AxiosResponse<MatrixItem>> => apiClient.post('/matrix', data);
+export const updateMatrix = (id: number, data: UpdateMatrixPayload): Promise<AxiosResponse<{ id: number, message: string }>> => apiClient.put(`/matrix/${id}`, data);
+export const deleteMatrix = (id: number): Promise<AxiosResponse<{ message: string }>> => apiClient.delete(`/matrix/${id}`);
 
+
+export default {
   getLines,
   getLineById,
   createLine,
   updateLine,
   deleteLine,
   getUnassignedLinePorts,
+  getMatrices,
+  getMatrixDetails,
+  createMatrix,
+  updateMatrix,
+  deleteMatrix,
 };

@@ -14,11 +14,15 @@ export interface LinePortConfiguration {
   [role: string]:  number; // e.g., { left: 123, right: 456 } where numbers are port IDs
 }
 
+export interface LinePortAssignment {
+  [role: string]:  [number, string]; // e.g., { left: [123, "portstring56", right: [124, "portstring57"] } where numbers are port IDs
+}
+
 export interface LineItem {
   id: number;
   name: string;
   description?: string;
-  ports: LinePortConfiguration; // Or more specific if roles are fixed e.g., { left?: number; right?: number; }
+  ports: LinePortAssignment; // Or more specific if roles are fixed e.g., { left?: number; right?: number; }
 }
 
 export interface CreateLinePayload {

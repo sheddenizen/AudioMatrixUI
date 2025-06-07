@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, Button, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import Api, { Port, LineItem, CreateLinePayload, UpdateLinePayload, LinePortConfiguration } from '../services/Api'; // Adjust path as needed
+import Api, { Port, LineItem, CreateLinePayload, UpdateLinePayload, LinePortConfiguration, LinePortAssignment } from '../services/Api'; // Adjust path as needed
+import { RollInLeft } from 'react-native-reanimated';
 
 interface EditLineModalProps {
   visible: boolean;
@@ -44,18 +45,18 @@ const EditLineModal: React.FC<EditLineModalProps> = ({ visible, onClose, onSave,
 
     fetchAvailablePorts();
 
+    const initialPorts: LinePortConfiguration = {};
+    portRoles.forEach(role => initialPorts[role] = 0); // 0 for "not selected"
     if (line) {
       setName(line.name || '');
       setDescription(line.description || '');
-      setSelectedPorts(line.ports || {});
+      Object.entries(line.ports || {}).forEach(([role,portPair])=>initialPorts[role] = portPair[0]);
     } else {
       // Reset for new line
       setName('');
       setDescription('');
-      const initialPorts: LinePortConfiguration = {};
-      portRoles.forEach(role => initialPorts[role] = 0); // 0 or undefined for "not selected"
-      setSelectedPorts(initialPorts);
     }
+    setSelectedPorts(initialPorts);
   }, [line, visible]);
 
   const handlePortChange = (role: string, portId: string | number) => {

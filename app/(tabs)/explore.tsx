@@ -10,6 +10,8 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Alert, TouchableOpacity } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
+import { MatrixView } from '@/components/MatrixView'; // Adjust path
+
 export default function TabTwoScreen() {
   return (
     <ParallaxScrollView
@@ -22,6 +24,10 @@ export default function TabTwoScreen() {
           style={styles.headerImage}
         />
       }>
+      <ThemedView style={{ flex: 1 }}>
+        <MatrixView matrixId={1} />
+      </ThemedView>
+
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Explore</ThemedText>
         <TouchableOpacity onPress={() => {Alert.alert("Test", "Did this show?"); console.log("boo");} }>

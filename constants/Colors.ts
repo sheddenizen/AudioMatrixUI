@@ -27,7 +27,9 @@ export const Colors = {
     primary: '#f0f', // Slop alert
     destructive: danger,
     border: '#888',
-    inputBackground: '#ccc'
+    inputBackground: '#ccc',
+    success: '#4f2',
+    warning: '#c40'
   },
   dark: {
     text: '#ECEDEE',
@@ -43,6 +45,14 @@ export const Colors = {
     primary: '#f0f', // Slop alert
     destructive: '#990',
     border: '#888',
-    inputBackground: '#222'
+    inputBackground: '#222',
+    success: '#4f2',
+    warning: '#c40'
   },
 };
+/*
+patched: theme.success, // e.g., a vibrant green
+desired_inactive: theme.warning, // e.g., an amber/yellow
+overpatched: theme.destructive, // e.g., a red
+unpatched: theme.icon, // e.g., a muted grey
+*/

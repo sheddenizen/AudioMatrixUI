@@ -100,6 +100,13 @@ export const createMatrix = (data: CreateMatrixPayload): Promise<AxiosResponse<M
 export const updateMatrix = (id: number, data: UpdateMatrixPayload): Promise<AxiosResponse<{ id: number, message: string }>> => apiClient.put(`/matrix/${id}`, data);
 export const deleteMatrix = (id: number): Promise<AxiosResponse<{ message: string }>> => apiClient.delete(`/matrix/${id}`);
 
+// --- Patching Endpoint Functions ---
+export const patchConnection = (dstId: number, srcId: number): Promise<AxiosResponse<string>> => 
+  apiClient.put(`/patch/${dstId}/${srcId}`);
+
+export const unpatchConnection = (dstId: number): Promise<AxiosResponse<string>> => 
+  apiClient.delete(`/patch/${dstId}`);
+
 
 export default {
   getLines,
@@ -113,4 +120,6 @@ export default {
   createMatrix,
   updateMatrix,
   deleteMatrix,
+  patchConnection,
+  unpatchConnection,
 };

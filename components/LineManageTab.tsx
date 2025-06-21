@@ -37,11 +37,12 @@ const LineListItem: React.FC<LineItemProps> = ({ item, onEdit, onDelete }) => {
       <ThemedView style={styles.itemTextContainer}>
         <ThemedText type="defaultSemiBold" style={styles.itemName}>{item.name}</ThemedText>
         <ThemedText style={styles.itemDescription}>{item.description || 'No description'}</ThemedText>
-        {item.ports && Object.keys(item.ports).length > 0 && (
-        <ThemedText style={styles.itemPorts}>
-          {Object.entries(item.ports).map(([role, portId]) => `${role}: ID ${portId}`).join(', ')}
-        </ThemedText>
-      )}
+        {item.ports && Object.keys(item.ports).length > 0 &&
+//        {(<ThemedText style={styles.itemPorts}>
+//          {Object.entries(item.ports).map(([role, portId]) => `${role}: ID ${portId}`).join(', ')}
+//        </ThemedText>)}
+          Object.entries(item.ports).map(([role, portId]) => (<ThemedText style={styles.itemPorts}>{`  ${role}: ID ${portId.join(', ')}`}</ThemedText>))}
+        
       </ThemedView>
       <ThemedView style={styles.itemActions}>
         <TouchableOpacity onPress={() => onEdit(item)} style={styles.iconButton}>

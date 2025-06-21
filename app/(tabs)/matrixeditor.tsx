@@ -1,4 +1,3 @@
-// app/(tabs)/matrices.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, Button, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, RefreshControl, Platform } from 'react-native';
 import { Stack } from 'expo-router';
@@ -123,7 +122,7 @@ export default function ManageMatricesScreen() {
 
     return (
         <ThemedView style={styles.container}>
-            <Stack.Screen options={{ title: 'Matrices' }} />
+            <Stack.Screen options={{ title: 'Matrix Editor' }} />
             <View style={styles.addButtonContainer}>
                 <Button title="Add New Matrix" onPress={() => handleOpenModal()} color={theme.createButton} />
             </View>

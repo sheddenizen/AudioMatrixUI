@@ -1,75 +1,91 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
+// app/(tabs)/matrices.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import Api, { MatrixItem } from '../../services/Api';
+import { MatrixListItem } from '../../components/MatrixListItem'; // Import the simplified list item
+import { useColorScheme } from 'react-native';
+import { Colors } from '../../constants/Colors';
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+export default function MatricesListScreen() {
+    const colorScheme = useColorScheme() ?? 'light';
+    const theme = Colors[colorScheme];
+    const router = useRouter(); // Expo Router's navigation hook
+
+    const [matrices, setMatrices] = useState<MatrixItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchMatrices = useCallback(async () => {
+        if (!refreshing) setIsLoading(true);
+        setError(null);
+        try {
+            const response = await Api.getMatrices();
+            setMatrices(response.data || []);
+        } catch (err: any) {
+            setError(err.message || 'Failed to fetch matrices.');
+        } finally {
+            setIsLoading(false);
+            setRefreshing(false);
+        }
+    }, [refreshing]);
+
+    useEffect(() => {
+        fetchMatrices();
+    }, []); // Initial fetch
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchMatrices();
+    }, [fetchMatrices]);
+
+    const navigateToMatrix = (id: number) => {
+        // Use Expo Router to push to the dynamic route for the matrix grid view.
+        router.push(`/matrix/${id}`);
+    };
+
+    // Show a loading indicator on initial fetch
+    if (isLoading && matrices.length === 0) {
+        return <ActivityIndicator size="large" style={styles.centered} color={theme.primary} />;
+    }
+
+    return (
+        <ThemedView style={styles.container}>
+            <Stack.Screen options={{ title: 'Matrix Switcher' }} />
+            
+            <FlatList
+                data={matrices}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                    <MatrixListItem
+                        item={item}
+                        onNavigate={() => navigateToMatrix(item.id)}
+                    />
+                )}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+                contentContainerStyle={{ padding: 15 }}
+                ListEmptyComponent={() => (
+                    <View style={styles.centered}>
+                        <ThemedText>No matrices found.</ThemedText>
+                        {error && <ThemedText style={{ color: theme.destructive, marginTop: 10 }}>Error: {error}</ThemedText>}
+                    </View>
+                )}
+            />
+        </ThemedView>
+    );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+    container: { 
+        flex: 1 
+    },
+    centered: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        paddingTop: 50 
+    },
 });

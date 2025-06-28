@@ -56,6 +56,9 @@ export interface MatrixItem {
 
 // For the GET /matrix/:id response
 export interface MatrixDetails extends Omit<MatrixItem, 'description'> { // Omit desc as it's not in the base GET /matrix/:id response
+  name: string;
+  description: string;
+  mode: number;
   srcs: { id: number; name: string }[]; // Ordered list of sources in the matrix
   dsts: { id: number; name: string }[]; // Ordered list of destinations in the matrix
   // The active/desired fields are also there, but not needed for the edit modal

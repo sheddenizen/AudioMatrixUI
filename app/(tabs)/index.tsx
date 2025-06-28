@@ -1,60 +1,76 @@
-// app/(tabs)/matrices.tsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+// app/(tabs)/index.tsx
+import React, { useState, useCallback } from 'react';
+import { View, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+// Import useFocusEffect from expo-router
+import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import Api, { MatrixItem } from '../../services/Api';
-import { MatrixListItem } from '../../components/MatrixListItem'; // Import the simplified list item
+import { MatrixListItem } from '../../components/MatrixListItem';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 
 export default function MatricesListScreen() {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
-    const router = useRouter(); // Expo Router's navigation hook
+    const router = useRouter();
 
     const [matrices, setMatrices] = useState<MatrixItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchMatrices = useCallback(async () => {
-        if (!refreshing) setIsLoading(true);
-        setError(null);
-        try {
+    // --- The Fix: Use useFocusEffect with a stable callback ---
+    // This hook runs the effect every time the screen comes into focus.
+    useFocusEffect(
+      useCallback(() => {
+        // This function is the "effect" that will run.
+        const fetchOnFocus = async () => {
+          // We can show a loading spinner, but only if not already loading
+          // to prevent flashes on quick re-focus.
+          if (!isLoading) {
+            setIsLoading(true);
+          }
+          setError(null);
+
+          try {
             const response = await Api.getMatrices();
             setMatrices(response.data || []);
-        } catch (err: any) {
+          } catch (err: any) {
             setError(err.message || 'Failed to fetch matrices.');
-        } finally {
+            setMatrices([]); // Clear data on error to avoid showing stale data
+          } finally {
             setIsLoading(false);
-            setRefreshing(false);
-        }
-    }, [refreshing]);
+          }
+        };
 
-    useEffect(() => {
-        fetchMatrices();
-    }, []); // Initial fetch
+        fetchOnFocus();
 
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        fetchMatrices();
-    }, [fetchMatrices]);
+      }, []) // <-- THE KEY: An empty dependency array makes this callback stable.
+             // It will be created only once and will not change on re-renders,
+             // which breaks the infinite loop.
+    );
 
     const navigateToMatrix = (id: number) => {
-        // Use Expo Router to push to the dynamic route for the matrix grid view.
         router.push(`/matrix/${id}`);
     };
 
-    // Show a loading indicator on initial fetch
-    if (isLoading && matrices.length === 0) {
+    // Show a loading indicator
+    if (isLoading) {
         return <ActivityIndicator size="large" style={styles.centered} color={theme.primary} />;
+    }
+
+    // Show an error message if something went wrong
+    if (error) {
+        return (
+            <ThemedView style={styles.centered}>
+                <ThemedText style={{ color: theme.destructive }}>Error: {error}</ThemedText>
+            </ThemedView>
+        );
     }
 
     return (
         <ThemedView style={styles.container}>
-            <Stack.Screen options={{ title: 'Matrix Switcher' }} />
+            <Stack.Screen options={{ title: 'Select a Matrix' }} />
             
             <FlatList
                 data={matrices}
@@ -65,12 +81,11 @@ export default function MatricesListScreen() {
                         onNavigate={() => navigateToMatrix(item.id)}
                     />
                 )}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+                // We don't need pull-to-refresh because focusing the tab does the same job now.
                 contentContainerStyle={{ padding: 15 }}
                 ListEmptyComponent={() => (
                     <View style={styles.centered}>
                         <ThemedText>No matrices found.</ThemedText>
-                        {error && <ThemedText style={{ color: theme.destructive, marginTop: 10 }}>Error: {error}</ThemedText>}
                     </View>
                 )}
             />
@@ -86,6 +101,6 @@ const styles = StyleSheet.create({
         flex: 1, 
         justifyContent: 'center', 
         alignItems: 'center', 
-        paddingTop: 50 
+        paddingHorizontal: 20,
     },
 });

@@ -54,13 +54,27 @@ export interface MatrixItem {
   mode: number;
 }
 
+// Destination details in matrix state
+export interface MatrixDestination {
+  id: number;
+  name: string;
+  state: 'patched' | 'partial' | 'inactive' | 'overpatched' | 'unpatched';
+  desired?: { src: number; [role: string]: any; };
+  others?: { src: number; [role: string]: any; }[];
+}
+
+export interface MatrixSource {
+  id: number;
+  name: string;
+}
+
 // For the GET /matrix/:id response
 export interface MatrixDetails extends Omit<MatrixItem, 'description'> { // Omit desc as it's not in the base GET /matrix/:id response
   name: string;
   description: string;
   mode: number;
-  srcs: { id: number; name: string }[]; // Ordered list of sources in the matrix
-  dsts: { id: number; name: string }[]; // Ordered list of destinations in the matrix
+  srcs: MatrixSource[]; // Ordered list of sources in the matrix
+  dsts: MatrixDestination[]; // Using the rich MatrixDestination type from before
   // The active/desired fields are also there, but not needed for the edit modal
 }
 

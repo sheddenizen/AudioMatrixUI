@@ -6,6 +6,7 @@
  * You can remove the `reset-project` script from package.json and safely delete this file after running it.
  */
 
+/*
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
@@ -98,6 +99,7 @@ const moveDirectories = async (userInput) => {
   }
 };
 
+
 rl.question(
   "Do you want to move existing files to /app-example instead of deleting them? (Y/n): ",
   (answer) => {
@@ -110,3 +112,4 @@ rl.question(
     }
   }
 );
+*/

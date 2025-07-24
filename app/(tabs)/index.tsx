@@ -70,7 +70,7 @@ export default function MatricesListScreen() {
 
     return (
         <ThemedView style={styles.container}>
-            <Stack.Screen options={{ title: 'Select a Matrix' }} />
+            <Stack.Screen options={{ title: 'View Matrix' }} />
             
             <FlatList
                 data={matrices}

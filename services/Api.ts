@@ -68,10 +68,20 @@ export interface MatrixSource {
   name: string;
 }
 
+// --- Add Metering-specific interfaces ---
+export interface MeterChannelData {
+  left: [number, number];  // [peak, rms]
+  right: [number, number]; // [peak, rms]
+}
+export interface MeterLevels {
+  [sourceId: string]: MeterChannelData;
+}
+
 // For the GET /matrix/:id response
 export interface MatrixDetails extends Omit<MatrixItem, 'description'> { // Omit desc as it's not in the base GET /matrix/:id response
   name: string;
   description: string;
+  meterurl?: string; // Add the optional meterurl
   mode: number;
   srcs: MatrixSource[]; // Ordered list of sources in the matrix
   dsts: MatrixDestination[]; // Using the rich MatrixDestination type from before
@@ -124,6 +134,10 @@ export const patchConnection = (dstId: number, srcId: number): Promise<AxiosResp
 export const unpatchConnection = (dstId: number): Promise<AxiosResponse<string>> => 
   apiClient.delete(`/patch/${dstId}`);
 
+// --- Add Metering Endpoint Function ---
+// This function takes the relative path from the API response
+export const getMeterLevels = (url: string): Promise<AxiosResponse<MeterLevels>> => apiClient.get(url);
+
 
 export default {
   getLines,
@@ -139,4 +153,5 @@ export default {
   deleteMatrix,
   patchConnection,
   unpatchConnection,
+  getMeterLevels,
 };

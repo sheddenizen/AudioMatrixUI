@@ -1,6 +1,6 @@
 // components/MatrixView.tsx
-import React, { useRef } from 'react';
-import { View, ScrollView, StyleSheet, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, ScrollView, StyleSheet, NativeSyntheticEvent, NativeScrollEvent, Platform } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { CrosspointButton } from './CrosspointButton';
 import { Meter } from './Meter';
@@ -19,13 +19,19 @@ const HEADER_HEIGHT = 60;
 const METER_HEIGHT = 220;
 const SOURCE_CELL_WIDTH = 80;
 const DEST_LABEL_WIDTH = 120;
+const SCROLLBAR_HEIGHT = 15;
 
 export const MatrixView: React.FC<MatrixViewProps> = ({ sources, destinations, meterLevels, onButtonClick }) => {
   const headerScrollViewRef = useRef<ScrollView>(null);
   const bodyScrollViewRef = useRef<ScrollView>(null);
-  const isScrollingByCode = useRef(false);
+  const scrollbarRef = useRef<ScrollView>(null); // Ref for the bottom scrollbar
+  const [contentWidth, setContentWidth] = useState(0); // To set the width of the scrollbar content
+
+  // Ref to prevent onScroll feedback loops
+  const scrollResponder = useRef<'header' | 'body' | 'scrollbar' | null>(null);
 
   const getButtonState = (dst: MatrixDestination, src: MatrixSource): ('patched' | 'desired_inactive' | 'overpatched' | 'unpatched') => {
+    // ... (logic from before)
     const isDesired = dst.desired?.src === src.id;
     const isActiveInOthers = !!dst.others?.some(o => o.src === src.id);
     if (isDesired) {
@@ -36,14 +42,25 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ sources, destinations, m
     return 'unpatched';
   };
 
-  const syncScroll = (event: NativeSyntheticEvent<NativeScrollEvent>, otherRef: React.RefObject<ScrollView>) => {
-    if (isScrollingByCode.current) {
-        isScrollingByCode.current = false;
-        return;
+  const syncScroll = (event: NativeSyntheticEvent<NativeScrollEvent>, source: 'header' | 'body' | 'scrollbar') => {
+    // If this scroll event was triggered by our code, ignore it.
+    if (scrollResponder.current !== null && scrollResponder.current !== source) {
+      return;
     }
-    isScrollingByCode.current = true;
+    scrollResponder.current = source;
+    
     const xOffset = event.nativeEvent.contentOffset.x;
-    otherRef.current?.scrollTo({ x: xOffset, animated: false });
+    
+    // Sync the other two scroll views
+    if (source !== 'header') {
+      headerScrollViewRef.current?.scrollTo({ x: xOffset, animated: false });
+    }
+    if (source !== 'body') {
+      bodyScrollViewRef.current?.scrollTo({ x: xOffset, animated: false });
+    }
+    if (source !== 'scrollbar') {
+        scrollbarRef.current?.scrollTo({ x: xOffset, animated: false });
+    }
   };
   
   return (
@@ -53,22 +70,19 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ sources, destinations, m
         <ScrollView
           ref={headerScrollViewRef}
           horizontal
-          showsHorizontalScrollIndicator={true} // ✅ FIX: Ensure scrollbar is enabled
+          showsHorizontalScrollIndicator={false} // Hide the header's own scrollbar
           scrollEventThrottle={16}
-          onScroll={(e) => syncScroll(e, bodyScrollViewRef)}
+          onScroll={(e) => syncScroll(e, 'header')}
+          onScrollEndDrag={() => (scrollResponder.current = null)}
         >
-          <View>
+          {/* We use onLayout to measure the total width of the content */}
+          <View onLayout={(e) => setContentWidth(e.nativeEvent.layout.width)}>
             <View style={styles.meterRow}>
               {sources.map(src => {
                 const levels = meterLevels[src.id];
                 return (
                   <View key={src.id} style={styles.meterCell}>
-                    <Meter
-                      lpk={levels?.left?.[0]}
-                      lrms={levels?.left?.[1]}
-                      rpk={levels?.right?.[0]}
-                      rrms={levels?.right?.[1]}
-                    />
+                    <Meter lpk={levels?.left?.[0]} lrms={levels?.left?.[1]} rpk={levels?.right?.[0]} rrms={levels?.right?.[1]} />
                   </View>
                 );
               })}
@@ -85,26 +99,23 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ sources, destinations, m
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* --- Section 2: Vertically Scrollable Body (Grid and Destination Names) --- */}
+      {/* --- Section 2: Vertically Scrollable Body --- */}
       <ScrollView style={styles.scrollableBodyContainer}>
         <View style={styles.bodyLayout}>
           <ScrollView
             ref={bodyScrollViewRef}
             horizontal
-            showsHorizontalScrollIndicator={true}
-            nestedScrollEnabled={true} // ✅ FIX: Allow nested scrolling on native
+            nestedScrollEnabled={true} // For native gesture handling
+            showsHorizontalScrollIndicator={false} // Hide the body's own scrollbar
             scrollEventThrottle={16}
-            onScroll={(e) => syncScroll(e, headerScrollViewRef)}
+            onScroll={(e) => syncScroll(e, 'body')}
+            onScrollEndDrag={() => (scrollResponder.current = null)}
           >
             <View>
               {destinations.map(dst => (
                 <View key={dst.id} style={styles.gridRow}>
                   {sources.map(src => (
-                    <CrosspointButton
-                      key={`${dst.id}-${src.id}`}
-                      state={getButtonState(dst, src)}
-                      onClick={() => onButtonClick(dst, src)}
-                    />
+                    <CrosspointButton key={`${dst.id}-${src.id}`} state={getButtonState(dst, src)} onClick={() => onButtonClick(dst, src)} />
                   ))}
                 </View>
               ))}
@@ -119,6 +130,21 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ sources, destinations, m
           </View>
         </View>
       </ScrollView>
+      
+      {/* --- Section 3: The Fake Bottom Scrollbar --- */}
+      <View style={styles.scrollbarContainer}>
+        <ScrollView
+          ref={scrollbarRef}
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          onScroll={(e) => syncScroll(e, 'scrollbar')}
+          onScrollEndDrag={() => (scrollResponder.current = null)}
+          style={{marginLeft: Platform.OS === 'web' ? 0 : -DEST_LABEL_WIDTH }}
+        >
+          {/* This inner view must have the same width as the grid content */}
+          <View style={{ width: contentWidth, height: 1 }} />
+        </ScrollView>
+      </View>
     </View>
   );
 };
@@ -133,19 +159,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderColor: '#999',
   },
-  meterRow: {
-    flexDirection: 'row',
-    height: METER_HEIGHT,
-  },
-  meterCell: {
-    width: SOURCE_CELL_WIDTH,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sourceHeaderRow: {
-    flexDirection: 'row',
-    height: HEADER_HEIGHT,
-  },
+  meterRow: { flexDirection: 'row', height: METER_HEIGHT },
+  meterCell: { width: SOURCE_CELL_WIDTH, justifyContent: 'center', alignItems: 'center' },
+  sourceHeaderRow: { flexDirection: 'row', height: HEADER_HEIGHT },
   sourceHeaderCell: {
     width: SOURCE_CELL_WIDTH,
     justifyContent: 'flex-end',
@@ -154,14 +170,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderColor: '#ccc',
   },
-  sourceHeaderText: {
-    fontWeight: 'bold',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  headerSpacer: {
-    width: DEST_LABEL_WIDTH,
-  },
+  sourceHeaderText: { fontWeight: 'bold', fontSize: 12, textAlign: 'center' },
+  headerSpacer: { width: DEST_LABEL_WIDTH },
   scrollableBodyContainer: {
     flex: 1,
   },
@@ -187,8 +197,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#ccc',
   },
-  destinationLabelText: {
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
+  destinationLabelText: { fontWeight: 'bold', fontSize: 12 },
+  scrollbarContainer: {
+    height: SCROLLBAR_HEIGHT,
+    // On web, the scrollbar should not go under the labels. On native it can.
+    paddingRight: Platform.OS === 'web' ? DEST_LABEL_WIDTH : 0,
+  }
 });
